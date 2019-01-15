@@ -1,5 +1,6 @@
 package com.example.matthias_pc.challengeme;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -87,6 +88,9 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {
+            Intent intent = new Intent(MainActivity.this, ListOnline.class);
+            startActivity(intent);
+            finish();
 
         } else if (id == R.id.nav_share) {
 
@@ -98,4 +102,7 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
+
 }
