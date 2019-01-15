@@ -24,21 +24,13 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        btnLogin = (Button) findViewById(R.id.btnLogin);
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivityForResult(
-                        AuthUI.getInstance().createSignInIntentBuilder().build(), LOGIN_PERMISSION
-                );
-
+        startActivityForResult(
+                AuthUI.getInstance().createSignInIntentBuilder().build(), LOGIN_PERMISSION);
             }
 
 
-        });
 
 
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
