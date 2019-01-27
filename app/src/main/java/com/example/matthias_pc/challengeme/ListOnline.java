@@ -10,10 +10,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.ViewGroup;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
-import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -26,7 +24,6 @@ public class ListOnline extends AppCompatActivity {
     //Firebase
     DatabaseReference onlineRef, currentUserRef, counterRef;
     FirebaseRecyclerAdapter<User, ListOnlineViewHolder> adapter;
-    FirebaseRecyclerOptions<User> options = new FirebaseRecyclerOptions.Builder<User>().setQuery(counterRef,User.class).build();
 
     //View
     RecyclerView listOnline;
@@ -67,20 +64,20 @@ public class ListOnline extends AppCompatActivity {
     }
 
     private void updateList(){
-        adapter = new FirebaseRecyclerAdapter<User, ListOnlineViewHolder>(options) {
+        adapter = new FirebaseRecyclerAdapter<User, ListOnlineViewHolder>(
+                User.class,
+                R.layout.user_layout,
+                ListOnlineViewHolder.class,
+                counterRef
+        ) {
             @Override
-            protected void onBindViewHolder(@NonNull ListOnlineViewHolder holder, int position, @NonNull User model) {
-                holder.txtEmail.setText(model.getEmail());
-            }
-
-            @NonNull
-            @Override
-            public ListOnlineViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-                return null;
+            protected void populateViewHolder(ListOnlineViewHolder viewHolder, User model, int position) {
+                viewHolder.txtEmail.setText(model.getEmail());
             }
         };
         adapter.notifyDataSetChanged();
         listOnline.setAdapter(adapter);
+
     }
 
     private void setupSystem() {
