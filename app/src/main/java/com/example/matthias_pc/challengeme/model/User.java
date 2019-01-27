@@ -1,4 +1,4 @@
-package com.example.matthias_pc.challengeme;
+package com.example.matthias_pc.challengeme.model;
 
 public class User {
 
