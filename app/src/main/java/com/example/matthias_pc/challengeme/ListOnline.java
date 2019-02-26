@@ -15,11 +15,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.example.matthias_pc.challengeme.model.Tracking;
 import com.example.matthias_pc.challengeme.model.User;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -39,6 +41,10 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     //Firebase
     DatabaseReference onlineRef, currentUserRef, counterRef, locations;
     FirebaseRecyclerAdapter<User, ListOnlineViewHolder> adapter;
+    FirebaseRecyclerOptions<User> options =
+            new FirebaseRecyclerOptions.Builder<User>()
+                    .setQuery(counterRef, User.class)
+                    .build();
 
     //View
     RecyclerView listOnline;
@@ -129,7 +135,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     }
 
     private void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
+        mLocationRequest = LocationRequest.create();
         mLocationRequest.setInterval(UPDATE_INTERVAL);
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
         mLocationRequest.setSmallestDisplacement(DISTANCE);
@@ -160,16 +166,19 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     }
 
     private void updateList() {
-        adapter = new FirebaseRecyclerAdapter<User, ListOnlineViewHolder>(
-                User.class,
-                R.layout.user_layout,
-                ListOnlineViewHolder.class,
-                counterRef
-        ) {
+        adapter = new FirebaseRecyclerAdapter<User, ListOnlineViewHolder>(options) {
+            @NonNull
             @Override
-            protected void populateViewHolder(ListOnlineViewHolder viewHolder, User model, int position) {
-                viewHolder.txtEmail.setText(model.getEmail());
+            public ListOnlineViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+                return null;
             }
+
+            @Override
+            protected void onBindViewHolder(@NonNull ListOnlineViewHolder holder, int position, @NonNull User model) {
+                holder.txtEmail.setText(model.getEmail());
+            }
+
+
         };
         adapter.notifyDataSetChanged();
         listOnline.setAdapter(adapter);
