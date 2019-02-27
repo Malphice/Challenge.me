@@ -25,9 +25,11 @@ import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -56,10 +58,10 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     private LocationRequest mLocationRequest;
     private GoogleApiClient mgGoogleApiClient;
     private Location mLastLocation;
-
     private static int UPDATE_INTERVAL = 5000;
     private static int FASTEST_INTERVAL = 3000;
     private static int DISTANCE = 10;
+    private FusedLocationProviderClient mFusedLocationClient;
 
 
     @Override
@@ -67,6 +69,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_online);
         setTitle("Users Online");
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
 
         //init view
@@ -83,11 +87,12 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
 
         //Firebase
-        locations = FirebaseDatabase.getInstance().getReference("Locations");
+        locations = FirebaseDatabase.getInstance().getReference();
         onlineRef = FirebaseDatabase.getInstance().getReference().child(".info/connected");
         counterRef = FirebaseDatabase.getInstance().getReference("lastOnline"); // Create new child
         currentUserRef = FirebaseDatabase.getInstance().getReference("lastOnline")
                 .child(FirebaseAuth.getInstance().getCurrentUser().getUid()); // create new child in Lastonline with key is Uid
+
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -118,21 +123,23 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
             return;
 
         }
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mgGoogleApiClient);
-        if (mLastLocation != null) {
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    com.example.matthias_pc.challengeme.model.Location newLocation = new com.example.matthias_pc.challengeme.model.Location
+                            (String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
 
-            //Update to Firebase
-            locations.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                    .setValue(new Tracking(FirebaseAuth.getInstance().getCurrentUser().getEmail(),
-                            FirebaseAuth.getInstance().getCurrentUser().getUid(),
-                            String.valueOf(mLastLocation.getLatitude()),
-                            String.valueOf(mLastLocation.getLongitude())));
+                    locations.child("Locations").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(newLocation);
+                    } else {
+                    Toast.makeText(getParent(), "Couldn't get the location", Toast.LENGTH_SHORT).show();
+                }
 
 
-        } else {
-            Toast.makeText(this, "Couldn't get the location", Toast.LENGTH_SHORT).show();
-        }
+            }
+        });
     }
+
 
     private void createLocationRequest() {
         mLocationRequest = LocationRequest.create();
@@ -225,10 +232,10 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode){
-            case MY_PERMISSION_REQUEST_CODE:{
-                if(grantResults.length >0 && grantResults[0]==PackageManager.PERMISSION_GRANTED){
-                    if(checkPlayServices()){
+        switch (requestCode) {
+            case MY_PERMISSION_REQUEST_CODE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (checkPlayServices()) {
                         buildGoogleApiClient();
                         createLocationRequest();
                         displayLocation();
@@ -292,14 +299,14 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     @Override
     protected void onStart() {
         super.onStart();
-        if(mgGoogleApiClient != null){
+        if (mgGoogleApiClient != null) {
             mgGoogleApiClient.connect();
         }
     }
 
     @Override
     protected void onStop() {
-        if(mgGoogleApiClient != null){
+        if (mgGoogleApiClient != null) {
             mgGoogleApiClient.disconnect();
         }
         super.onStop();
