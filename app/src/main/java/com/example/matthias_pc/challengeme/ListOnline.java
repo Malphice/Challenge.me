@@ -153,9 +153,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
             public void onClick(View v) {
 
                 if(btnStartRun.getText()== "Start run") {
-                    int color = Color.parseColor("#000000");
+
                     rl.setLayoutParams(lp);
-                    rl.setBackgroundColor(color);
 
                     final TextView tv = new TextView(getApplicationContext());
 
@@ -165,7 +164,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
                     tv.setLayoutParams(lp_tv);
                     tv.setTextSize(30);
-                    tv.setTextColor(Color.YELLOW);
+                    tv.setTextColor(Color.parseColor("#FFFFEE00"));
                     tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
 
                     rl.addView(tv);
@@ -175,8 +174,12 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                     btnCancel.setText("Cancel");
 
                     lp2.addRule(RelativeLayout.ABOVE, R.id.buttonCreateChallenge);
+                    lp2.setMargins(15,0,15,15);
 
                     btnCancel.setLayoutParams(lp2);
+
+                    btnCancel.setBackgroundResource(R.drawable.btn_drawable1);
+                    btnCancel.setTextColor(Color.parseColor("#FFFFEE00"));
 
                     //container.addView(tv);
                     new CountDownTimer(3000, 1000) {
@@ -450,7 +453,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                     ChallengeType challengeType = new ChallengeType(lat, challengeAttributeLat, lon, challengeAttributeLon);
                     Challenge challengeNew = new Challenge(ts, ts,"running challenge", challengeType);
 
-                    challengeRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(challengeNew);
+                    challengeRef.child("Challenges").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(challengeNew);
 
             }
 
