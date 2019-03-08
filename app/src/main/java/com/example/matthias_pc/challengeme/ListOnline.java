@@ -1,23 +1,37 @@
 package com.example.matthias_pc.challengeme;
 
 import android.Manifest;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
+import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.matthias_pc.challengeme.model.Challenge;
+import com.example.matthias_pc.challengeme.model.ChallengeAttribute;
+import com.example.matthias_pc.challengeme.model.ChallengeType;
 import com.example.matthias_pc.challengeme.model.Tracking;
 import com.example.matthias_pc.challengeme.model.User;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
@@ -37,11 +51,13 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import org.w3c.dom.Text;
+
 public class ListOnline extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
 
     //Firebase
-    DatabaseReference onlineRef, currentUserRef, counterRef, locations;
+    DatabaseReference onlineRef, currentUserRef, counterRef, locations, challengeRef;
     FirebaseRecyclerAdapter<User, ListOnlineViewHolder> adapter;
     FirebaseRecyclerOptions<User> options =
             new FirebaseRecyclerOptions.Builder<User>()
@@ -62,6 +78,9 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     private static int FASTEST_INTERVAL = 3000;
     private static int DISTANCE = 10;
     private FusedLocationProviderClient mFusedLocationClient;
+
+    String lon = "";
+    String lat = "";
 
 
     @Override
@@ -92,6 +111,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         counterRef = FirebaseDatabase.getInstance().getReference("lastOnline"); // Create new child
         currentUserRef = FirebaseDatabase.getInstance().getReference("lastOnline")
                 .child(FirebaseAuth.getInstance().getCurrentUser().getUid()); // create new child in Lastonline with key is Uid
+        challengeRef = FirebaseDatabase.getInstance().getReference("Challenge");
+
 
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -105,6 +126,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                 buildGoogleApiClient();
                 createLocationRequest();
                 displayLocation();
+                createNewChallenge();
             }
         }
         setupSystem();
@@ -113,7 +135,81 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         updateList();
 
 
+        //Button
+        final RelativeLayout container =(RelativeLayout)findViewById(R.id.list_Online_layout);
+        final RelativeLayout rl = new RelativeLayout(getApplicationContext());
+        final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.MATCH_PARENT
+        );
+        final Button btnStartRun = findViewById(R.id.buttonCreateChallenge);
+        final Button btnCancel = new Button(this);
+        final RelativeLayout.LayoutParams lp2 = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        btnStartRun.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                if(btnStartRun.getText()== "Start run") {
+                    int color = Color.parseColor("#000000");
+                    rl.setLayoutParams(lp);
+                    rl.setBackgroundColor(color);
+
+                    final TextView tv = new TextView(getApplicationContext());
+
+                    RelativeLayout.LayoutParams lp_tv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+
+                    lp_tv.addRule(RelativeLayout.CENTER_IN_PARENT);
+
+                    tv.setLayoutParams(lp_tv);
+                    tv.setTextSize(30);
+                    tv.setTextColor(Color.YELLOW);
+                    tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
+
+                    rl.addView(tv);
+
+                    setContentView(rl);
+
+                    btnCancel.setText("Cancel");
+
+                    lp2.addRule(RelativeLayout.ABOVE, R.id.buttonCreateChallenge);
+
+                    btnCancel.setLayoutParams(lp2);
+
+                    //container.addView(tv);
+                    new CountDownTimer(3000, 1000) {
+                        final TextView text = tv;
+
+                        public void onTick(long millisUntilFinished) {
+                            tv.setText("Start in: " + millisUntilFinished / 1000);
+                        }
+
+                        public void onFinish() {
+                            tv.setText(null);
+                            btnStartRun.setText("Stop run");
+                            setContentView(container);
+                        }
+                    }.start();
+                }else if(btnStartRun.getText() == "Stop run"){
+                    btnStartRun.setText("Create Challenge");
+                    container.addView(btnCancel);
+                    btnCancel.setOnClickListener(new View.OnClickListener() {
+                        public void onClick(View v) {
+                            openDialog(v);
+                        }
+                    });
+                }else{
+                    btnStartRun.setText("Start run");
+                    container.removeView(btnCancel);
+                    createNewChallenge();
+                }
+            }
+        });
     }
+
+
 
     private void displayLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -131,11 +227,12 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                             (String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
 
                     locations.child("Locations").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(newLocation);
+                    lon = String.valueOf(location.getLongitude());
+                    lat = String.valueOf(location.getLatitude());
+
                     } else {
                     Toast.makeText(getParent(), "Couldn't get the location", Toast.LENGTH_SHORT).show();
                 }
-
-
             }
         });
     }
@@ -317,4 +414,51 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         super.onResume();
         checkPlayServices();
     }
+
+    public void openDialog(final View view){
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setMessage("Are you sure you want to cancel");
+        alertDialogBuilder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+                Toast.makeText(ListOnline.this,"You clicked yes button",Toast.LENGTH_LONG).show();
+                startActivity(new Intent(ListOnline.this,ListOnline.class));
+            }
+        });
+
+        alertDialogBuilder.setNegativeButton("No",new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+
+
+
+    private void createNewChallenge() {
+        challengeRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    long ts = System.currentTimeMillis()/1000;
+                    ChallengeAttribute challengeAttributeLat = new ChallengeAttribute("Latitude");
+                    ChallengeAttribute challengeAttributeLon = new ChallengeAttribute("Longitude");
+                    ChallengeType challengeType = new ChallengeType(lat, challengeAttributeLat, lon, challengeAttributeLon);
+                    Challenge challengeNew = new Challenge(ts, ts,"running challenge", challengeType);
+
+                    challengeRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(challengeNew);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 }
+

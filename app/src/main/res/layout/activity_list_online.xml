@@ -2,8 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/list_Online_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_alignParentBottom="true"
     tools:context=".ListOnline">
 
     <android.support.v7.widget.Toolbar
@@ -24,8 +26,13 @@
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
         android:layout_marginTop="0dp">
-
-
-
     </android.support.v7.widget.RecyclerView>
+
+    <Button
+        android:id="@+id/buttonCreateChallenge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Start run"
+        android:layout_alignParentBottom="true"/>
+
 </RelativeLayout>
