@@ -6,12 +6,17 @@ public class Challenge {
     private Long startTime, endTime;
     private String description, uid;
     private ChallengeType challengeType;
+    private User user;
 
-    public Challenge(Long startTime, Long endTime,String desc, ChallengeType challengeType) {
+
+
+    public Challenge(Long startTime, Long endTime, String desc, ChallengeType challengeType,  User user) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.description = desc;
         this.challengeType = challengeType;
+        this.user = user;
+
     }
 
     public Challenge(){}
@@ -54,5 +59,13 @@ public class Challenge {
 
     public void setChallengeType(ChallengeType challengeType) {
         this.challengeType = challengeType;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

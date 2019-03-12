@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="btnCancel" type="id"/>
+    <item name="btnCreateChallenge" type="id"/>
+    <item name="btnStopRun" type="id"/>
+</resources>

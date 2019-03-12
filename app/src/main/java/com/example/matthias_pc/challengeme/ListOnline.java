@@ -18,7 +18,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -32,7 +31,6 @@ import android.widget.Toast;
 import com.example.matthias_pc.challengeme.model.Challenge;
 import com.example.matthias_pc.challengeme.model.ChallengeAttribute;
 import com.example.matthias_pc.challengeme.model.ChallengeType;
-import com.example.matthias_pc.challengeme.model.Tracking;
 import com.example.matthias_pc.challengeme.model.User;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
@@ -50,8 +48,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import org.w3c.dom.Text;
 
 public class ListOnline extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
@@ -111,7 +107,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         counterRef = FirebaseDatabase.getInstance().getReference("lastOnline"); // Create new child
         currentUserRef = FirebaseDatabase.getInstance().getReference("lastOnline")
                 .child(FirebaseAuth.getInstance().getCurrentUser().getUid()); // create new child in Lastonline with key is Uid
-        challengeRef = FirebaseDatabase.getInstance().getReference("Challenge");
+        challengeRef = FirebaseDatabase.getInstance().getReference();
 
 
 
@@ -126,7 +122,6 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                 buildGoogleApiClient();
                 createLocationRequest();
                 displayLocation();
-                createNewChallenge();
             }
         }
         setupSystem();
@@ -143,17 +138,20 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                 RelativeLayout.LayoutParams.MATCH_PARENT
         );
         final Button btnStartRun = findViewById(R.id.buttonCreateChallenge);
+        final Button btnStopRun = new Button(this);
+        final Button btnCreateChallenge = new Button(this);
         final Button btnCancel = new Button(this);
         final RelativeLayout.LayoutParams lp2 = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+        );
+        final RelativeLayout.LayoutParams lp3 = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT
         );
 
         btnStartRun.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-
-                if(btnStartRun.getText()== "Start run") {
-
                     rl.setLayoutParams(lp);
 
                     final TextView tv = new TextView(getApplicationContext());
@@ -172,14 +170,30 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                     setContentView(rl);
 
                     btnCancel.setText("Cancel");
+                    btnStopRun.setText("Stop Run");
+                    btnCreateChallenge.setText("Create Challenge");
 
-                    lp2.addRule(RelativeLayout.ABOVE, R.id.buttonCreateChallenge);
+                    btnCancel.setLayoutParams(lp3);
+                    btnCancel.setBackgroundResource(R.drawable.btn_rounded_black);
+                    btnCancel.setTextColor(Color.parseColor("#FFFFEE00"));
+                    btnCancel.setId(R.id.btnCancel);
+
+                    btnStopRun.setLayoutParams(lp2);
+                    btnStopRun.setBackgroundResource(R.drawable.btn_rounded);
+                    btnStopRun.setTextColor(Color.parseColor("#000000"));
+                    btnStopRun.setId(R.id.btnStopRun);
+
+                    btnCreateChallenge.setLayoutParams(lp2);
+                    btnCreateChallenge.setBackgroundResource(R.drawable.btn_rounded);
+                    btnCreateChallenge.setId(R.id.btnCreateChallenge);
+                    btnCreateChallenge.setTextColor(Color.parseColor("#000000"));
+
+                    lp2.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     lp2.setMargins(15,0,15,15);
 
-                    btnCancel.setLayoutParams(lp2);
+                    lp3.addRule(RelativeLayout.ABOVE, R.id.btnCreateChallenge);
+                    lp3.setMargins(15,0,15,15);
 
-                    btnCancel.setBackgroundResource(R.drawable.btn_drawable1);
-                    btnCancel.setTextColor(Color.parseColor("#FFFFEE00"));
 
                     //container.addView(tv);
                     new CountDownTimer(3000, 1000) {
@@ -191,25 +205,36 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
                         public void onFinish() {
                             tv.setText(null);
-                            btnStartRun.setText("Stop run");
+                           // btnStartRun.setText("Stop run");
+                            container.addView(btnStopRun);
+                            container.removeView(btnStartRun);
                             setContentView(container);
                         }
                     }.start();
-                }else if(btnStartRun.getText() == "Stop run"){
-                    btnStartRun.setText("Create Challenge");
-                    container.addView(btnCancel);
-                    btnCancel.setOnClickListener(new View.OnClickListener() {
-                        public void onClick(View v) {
-                            openDialog(v);
-                        }
-                    });
-                }else{
-                    btnStartRun.setText("Start run");
-                    container.removeView(btnCancel);
-                    createNewChallenge();
                 }
-            }
         });
+        btnStopRun.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                btnStartRun.setText("Create Challenge");
+                container.removeView(btnStopRun);
+                container.addView(btnCreateChallenge);
+                container.addView(btnCancel);
+                btnCancel.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        openDialog(v);
+                    }
+                });
+            }});
+
+        btnCreateChallenge.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                btnStartRun.setText("Start run");
+                container.removeView(btnCancel);
+                container.removeView(btnCreateChallenge);
+                container.addView(btnStartRun);
+                createNewChallenge();
+            }});
+
     }
 
 
@@ -444,24 +469,16 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
 
     private void createNewChallenge() {
-        challengeRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     long ts = System.currentTimeMillis()/1000;
                     ChallengeAttribute challengeAttributeLat = new ChallengeAttribute("Latitude");
                     ChallengeAttribute challengeAttributeLon = new ChallengeAttribute("Longitude");
                     ChallengeType challengeType = new ChallengeType(lat, challengeAttributeLat, lon, challengeAttributeLon);
-                    Challenge challengeNew = new Challenge(ts, ts,"running challenge", challengeType);
 
-                    challengeRef.child("Challenges").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(challengeNew);
+                    User user = new User(FirebaseAuth.getInstance().getCurrentUser().getEmail(), null);
+                    Challenge challengeNew = new Challenge(ts, ts,"running challenge", challengeType, user);
 
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+                    challengeRef.child("Challenges").push().setValue(challengeNew);
 
             }
-        });
-    }
 }
 
