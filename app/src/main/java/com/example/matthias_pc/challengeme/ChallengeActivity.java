@@ -1,27 +1,29 @@
 package com.example.matthias_pc.challengeme;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
+import com.baoyz.swipemenulistview.SwipeMenuLayout;
 import com.baoyz.swipemenulistview.SwipeMenuListView;
 import com.example.matthias_pc.challengeme.model.Challenge;
 import com.example.matthias_pc.challengeme.model.User;
@@ -30,7 +32,6 @@ import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -88,25 +89,25 @@ public class ChallengeActivity extends AppCompatActivity {
             }
         });
 
-        checkForChallenge();
+        createChallengeListWithSwipeMenu();
     }
 
-    private void checkForChallenge(){
-        final List <String> challengeList = new ArrayList<>();
+    private void createChallengeListWithSwipeMenu(){
+        final List <Challenge> challengeList = new ArrayList<>();
+        final List <String> keysList = new ArrayList<>();
         mChallenge.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NotNull DataSnapshot dataSnapshot) {
                 // Get Post object and use the values to update the UI;
-               SwipeMenuListView listView = (SwipeMenuListView) findViewById(R.id.listView);
+               final SwipeMenuListView listView = (SwipeMenuListView) findViewById(R.id.listView);
 
                 challengeList.clear();
                 for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
                     Challenge challenge = postSnapshot.getValue(Challenge.class);
-                    challengeList.add(challenge.getUser().getEmail());
-                    // here you can access to name property like university.name
-
+                    challengeList.add(challenge);
+                    keysList.add(postSnapshot.getKey());
                 }
-                ArrayAdapter adapter = new ArrayAdapter(ChallengeActivity.this, android.R.layout.simple_list_item_1, challengeList);
+                final ArrayAdapter adapter = new ArrayAdapter(ChallengeActivity.this, android.R.layout.simple_list_item_1, challengeList);
                 listView.setAdapter(adapter);
                 adapter.notifyDataSetChanged();
 
@@ -114,6 +115,13 @@ public class ChallengeActivity extends AppCompatActivity {
 
                     @Override
                     public void create(SwipeMenu menu) {
+                        SwipeMenuItem acceptChallenge = new SwipeMenuItem(
+                                getApplicationContext());
+                        acceptChallenge.setBackground(new ColorDrawable(Color.rgb(255, 238,
+                                0)));
+                        acceptChallenge.setWidth(170);
+                        acceptChallenge.setIcon(R.drawable.ic_add_circle_outline_black_24dp);
+                        menu.addMenuItem(acceptChallenge);
                         SwipeMenuItem deleteItem = new SwipeMenuItem(
                                 getApplicationContext());
                         deleteItem.setBackground(new ColorDrawable(Color.rgb(255, 238,
@@ -130,16 +138,24 @@ public class ChallengeActivity extends AppCompatActivity {
                     public boolean onMenuItemClick(int position, SwipeMenu menu, int index) {
                         switch (index) {
                             case 0:
-                                Log.d(TAG, "onMenuItemClick: clicked item" + index);
-
+                            case 1:
+                                listView.setItemChecked(position, false);
+                                mChallenge.child(keysList.get(position)).removeValue();
                                 break;
                         }
-                        // false : close the menu; true : not close the menu
                         return false;
                     }
                 });
-            }
 
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                        //String item = ((SwipeMenuLayout)view).getMenuView().toString();
+                        //Toast.makeText(getBaseContext(), item,Toast.LENGTH_LONG).show();
+                        openDialog(view);
+                    }
+                });
+            }
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 // Getting Post failed, log a message
@@ -148,5 +164,65 @@ public class ChallengeActivity extends AppCompatActivity {
             }
         });
     }
+
+    public void openDialog(final View view){
+
+
+        final RelativeLayout container =(RelativeLayout)findViewById(R.id.Challenge_List_layout);
+        final RelativeLayout rl = new RelativeLayout(getApplicationContext());
+        final RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.MATCH_PARENT
+        );
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setMessage("Do you want to accept the Challenge");
+        alertDialogBuilder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+                Toast.makeText(ChallengeActivity.this,"You clicked yes button",Toast.LENGTH_LONG).show();
+
+                rl.setLayoutParams(lp);
+
+                final TextView tv = new TextView(getApplicationContext());
+
+                RelativeLayout.LayoutParams lp_tv = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+
+                lp_tv.addRule(RelativeLayout.CENTER_IN_PARENT);
+
+                tv.setLayoutParams(lp_tv);
+                tv.setTextSize(30);
+                tv.setTextColor(Color.parseColor("#FFFFEE00"));
+                tv.setTypeface(tv.getTypeface(), Typeface.BOLD_ITALIC);
+
+                rl.addView(tv);
+
+                setContentView(rl);
+                new CountDownTimer(3000, 1000) {
+                    final TextView text = tv;
+
+                    public void onTick(long millisUntilFinished) {
+                        tv.setText("Start in: " + millisUntilFinished / 1000);
+                    }
+
+                    public void onFinish() {
+                        tv.setText(null);
+                        setContentView(container);
+                    }
+                }.start();
+            }
+        });
+
+        alertDialogBuilder.setNegativeButton("No",new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+
 
 }
