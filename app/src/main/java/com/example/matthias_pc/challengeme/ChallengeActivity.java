@@ -8,10 +8,12 @@ import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -38,11 +40,18 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.annotations.NotNull;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.maps.Style;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChallengeActivity extends AppCompatActivity {
+public class ChallengeActivity extends AppCompatActivity{
 
     private static final String TAG = "ChallengeActivity";
 
@@ -77,6 +86,8 @@ public class ChallengeActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("Challenges");
         setSupportActionBar(toolbar);
+
+
 
         //Firebase
         mChallenge = FirebaseDatabase.getInstance().getReference("Challenges");
@@ -207,6 +218,7 @@ public class ChallengeActivity extends AppCompatActivity {
                     public void onFinish() {
                         tv.setText(null);
                         setContentView(container);
+                        //container.addView(mapView);
                     }
                 }.start();
             }
@@ -222,7 +234,4 @@ public class ChallengeActivity extends AppCompatActivity {
         AlertDialog alertDialog = alertDialogBuilder.create();
         alertDialog.show();
     }
-
-
-
 }

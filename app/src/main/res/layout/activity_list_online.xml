@@ -8,6 +8,8 @@
     android:layout_alignParentBottom="true"
     tools:context=".ListOnline">
 
+
+
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
         android:minHeight="?attr/actionBarSize"

@@ -3,17 +3,17 @@ package com.example.matthias_pc.challengeme.model;
 public class ChallengeType {
 
     private int value;
-    private String StringValue;
-    private String StringValue2;
+    private double aDouble;
+    private double aDouble1;
     private ChallengeAttribute challengeAttribute;
     private ChallengeAttribute challengeAttribute2;
 
 
 
-    public ChallengeType(String stringValue, ChallengeAttribute challengeAttribute, String stringValue2, ChallengeAttribute challengeAttribute2) {
-        StringValue = stringValue;
+    public ChallengeType(double aDouble, ChallengeAttribute challengeAttribute, double aDouble1, ChallengeAttribute challengeAttribute2) {
+        this.aDouble = aDouble;
         this.challengeAttribute = challengeAttribute;
-        StringValue2 = stringValue2;
+        this.aDouble1 = aDouble1;
         this.challengeAttribute2 = challengeAttribute2;
     }
 
@@ -36,20 +36,20 @@ public class ChallengeType {
         this.challengeAttribute = challengeAttribute;
     }
 
-    public String getStringValue() {
-        return StringValue;
+    public double getaDouble() {
+        return aDouble;
     }
 
-    public void setStringValue(String stringValue) {
-        StringValue = stringValue;
+    public void setaDouble(double aDouble) {
+        this.aDouble = aDouble;
     }
 
-    public String getStringValue2() {
-        return StringValue2;
+    public double getaDouble1() {
+        return aDouble1;
     }
 
-    public void setStringValue2(String stringValue2) {
-        StringValue2 = stringValue2;
+    public void setaDouble1(double aDouble1) {
+        this.aDouble1 = aDouble1;
     }
 
     public ChallengeAttribute getChallengeAttribute2() {

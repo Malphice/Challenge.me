@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
@@ -48,9 +49,23 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.Point;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 public class ListOnline extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener, OnMapReadyCallback{
 
     //Firebase
     DatabaseReference onlineRef, currentUserRef, counterRef, locations, challengeRef;
@@ -75,15 +90,30 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     private static int DISTANCE = 10;
     private FusedLocationProviderClient mFusedLocationClient;
 
-    String lon = "";
-    String lat = "";
+    private double lon;
+    private double lat;
+
+    private MapView mapView;
+    private MapboxMap mapboxMap;
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Mapbox.getInstance(this, "pk.eyJ1IjoiY2hhbGxlbmdlLW1lIiwiYSI6ImNqdHI5bjF4MTBubTU0NHBhM3Qzam85MjcifQ.RbitFEoz8u1-ID8N-4ZSIw");
+
         setContentView(R.layout.activity_list_online);
         setTitle("Users Online");
+
+
+
+
+
+        mapView = new MapView(this);
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
+
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -150,6 +180,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                 RelativeLayout.LayoutParams.WRAP_CONTENT
         );
 
+
+
         btnStartRun.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                     rl.setLayoutParams(lp);
@@ -204,11 +236,15 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                         }
 
                         public void onFinish() {
+                            mapView.onStart();
                             tv.setText(null);
                            // btnStartRun.setText("Stop run");
                             container.addView(btnStopRun);
                             container.removeView(btnStartRun);
                             setContentView(container);
+                            mapView.onResume();
+                            container.addView(mapView);
+
                         }
                     }.start();
                 }
@@ -228,11 +264,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
         btnCreateChallenge.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                btnStartRun.setText("Start run");
-                container.removeView(btnCancel);
-                container.removeView(btnCreateChallenge);
-                container.addView(btnStartRun);
                 createNewChallenge();
+                startActivity(new Intent(ListOnline.this,ListOnline.class));
             }});
 
     }
@@ -255,9 +288,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                             (String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
 
                     locations.child("Locations").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).setValue(newLocation);
-                    lon = String.valueOf(location.getLongitude());
-                    lat = String.valueOf(location.getLatitude());
-
+                    lon = Double.valueOf(location.getLongitude());
+                    lat = Double.valueOf(location.getLatitude());
                     } else {
                     Toast.makeText(getParent(), "Couldn't get the location", Toast.LENGTH_SHORT).show();
                 }
@@ -417,6 +449,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
     @Override
     public void onLocationChanged(Location location) {
+
         mLastLocation = location;
         displayLocation();
     }
@@ -427,6 +460,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         if (mgGoogleApiClient != null) {
             mgGoogleApiClient.connect();
         }
+        mapView.onStart();
     }
 
     @Override
@@ -435,12 +469,38 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
             mgGoogleApiClient.disconnect();
         }
         super.onStop();
+        mapView.onStop();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        mapView.onResume();
         checkPlayServices();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //mapView.onDestroy();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
     }
 
     public void openDialog(final View view){
@@ -480,5 +540,46 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                     challengeRef.child("Challenges").push().setValue(challengeNew);
 
             }
+
+    @Override
+    public void onMapReady(@NonNull MapboxMap mapboxMap) {
+        this.mapboxMap = mapboxMap;
+
+
+
+        mapboxMap.setStyle(Style.OUTDOORS, new Style.OnStyleLoaded() {
+            @Override
+            public void onStyleLoaded(@NonNull Style style) {
+
+/*
+                GeoJsonSource  geoJsonSource = new GeoJsonSource("source-id",
+                        Feature.fromGeometry(Point.fromLngLat(lat,
+                                lon)));
+
+                style.addImage(("marker_icon"), BitmapFactory.decodeResource(
+                        getResources(), R.drawable.ic_location_on_black_24dp));
+
+                style.addSource(geoJsonSource);
+
+                style.addLayer(new SymbolLayer("layer-id", "source-id")
+                        .withProperties(
+                                PropertyFactory.iconImage("marker_icon"),
+                                PropertyFactory.iconIgnorePlacement(true),
+                                PropertyFactory.iconAllowOverlap(true)
+                        ));
+*/
+
+            }
+        });
+
+
+        CameraPosition position = new CameraPosition.Builder()
+                .target(new LatLng(lat, lon))
+                .zoom(15)
+                .tilt(20)
+                .build();
+        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 2000);
+    }
+
 }
 
