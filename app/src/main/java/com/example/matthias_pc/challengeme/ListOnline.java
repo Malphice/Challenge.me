@@ -49,6 +49,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mapbox.android.core.permissions.PermissionsListener;
+import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
@@ -56,6 +58,8 @@ import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.location.LocationComponent;
+import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
@@ -64,8 +68,10 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
+import java.util.List;
+
 public class ListOnline extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
-        LocationListener, OnMapReadyCallback{
+        LocationListener, OnMapReadyCallback,  MapboxMap.OnMapClickListener, PermissionsListener {
 
     //Firebase
     DatabaseReference onlineRef, currentUserRef, counterRef, locations, challengeRef;
@@ -96,19 +102,17 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     private MapView mapView;
     private MapboxMap mapboxMap;
 
+    private PermissionsManager permissionsManager;
+    private LocationComponent locationComponent;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Mapbox.getInstance(this, "pk.eyJ1IjoiY2hhbGxlbmdlLW1lIiwiYSI6ImNqdHI5bjF4MTBubTU0NHBhM3Qzam85MjcifQ.RbitFEoz8u1-ID8N-4ZSIw");
-
         setContentView(R.layout.activity_list_online);
         setTitle("Users Online");
 
-
-
-
+        Mapbox.getInstance(this, "pk.eyJ1IjoiY2hhbGxlbmdlLW1lIiwiYSI6ImNqdHI5bjF4MTBubTU0NHBhM3Qzam85MjcifQ.RbitFEoz8u1-ID8N-4ZSIw");
 
         mapView = new MapView(this);
         mapView.onCreate(savedInstanceState);
@@ -236,7 +240,6 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                         }
 
                         public void onFinish() {
-                            mapView.onStart();
                             tv.setText(null);
                            // btnStartRun.setText("Stop run");
                             container.addView(btnStopRun);
@@ -264,10 +267,13 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
         btnCreateChallenge.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                btnStartRun.setText("Start run");
+                container.removeView(btnCancel);
+                container.removeView(btnCreateChallenge);
+                container.addView(btnStartRun);
                 createNewChallenge();
-                startActivity(new Intent(ListOnline.this,ListOnline.class));
-            }});
-
+            }
+        });
     }
 
 
@@ -396,6 +402,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
                         buildGoogleApiClient();
                         createLocationRequest();
                         displayLocation();
+                        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
                     }
                 }
             }
@@ -460,7 +467,6 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         if (mgGoogleApiClient != null) {
             mgGoogleApiClient.connect();
         }
-        mapView.onStart();
     }
 
     @Override
@@ -469,7 +475,6 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
             mgGoogleApiClient.disconnect();
         }
         super.onStop();
-        mapView.onStop();
     }
 
     @Override
@@ -545,41 +550,54 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     public void onMapReady(@NonNull MapboxMap mapboxMap) {
         this.mapboxMap = mapboxMap;
 
+        //mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 2000);
 
+        mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat,lon), 15.5f), 2000, null);
 
-        mapboxMap.setStyle(Style.OUTDOORS, new Style.OnStyleLoaded() {
+        mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
-
-/*
-                GeoJsonSource  geoJsonSource = new GeoJsonSource("source-id",
-                        Feature.fromGeometry(Point.fromLngLat(lat,
-                                lon)));
-
-                style.addImage(("marker_icon"), BitmapFactory.decodeResource(
-                        getResources(), R.drawable.ic_location_on_black_24dp));
-
-                style.addSource(geoJsonSource);
-
-                style.addLayer(new SymbolLayer("layer-id", "source-id")
-                        .withProperties(
-                                PropertyFactory.iconImage("marker_icon"),
-                                PropertyFactory.iconIgnorePlacement(true),
-                                PropertyFactory.iconAllowOverlap(true)
-                        ));
-*/
-
+                enableLocationComponent(style);
             }
         });
-
-
-        CameraPosition position = new CameraPosition.Builder()
-                .target(new LatLng(lat, lon))
-                .zoom(15)
-                .tilt(20)
-                .build();
-        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 2000);
     }
 
+    @Override
+    public boolean onMapClick(@NonNull LatLng point) {
+        return false;
+    }
+
+    @SuppressWarnings( {"MissingPermission"})
+    private void enableLocationComponent(@NonNull Style loadedMapStyle) {
+        // Check if permissions are enabled and if not request
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            // Activate the MapboxMap LocationComponent to show user location
+            // Adding in LocationComponentOptions is also an optional parameter
+            locationComponent = mapboxMap.getLocationComponent();
+            locationComponent.activateLocationComponent(this, loadedMapStyle);
+            locationComponent.setLocationComponentEnabled(true);
+            // Set the component's camera mode
+            //locationComponent.setCameraMode(CameraMode.TRACKING);
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }
+    }
+
+
+    @Override
+    public void onExplanationNeeded(List<String> permissionsToExplain) {
+        Toast.makeText(this, R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPermissionResult(boolean granted) {
+        if (granted) {
+            enableLocationComponent(mapboxMap.getStyle());
+        } else {
+            Toast.makeText(this, R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
 }
 
