@@ -10,4 +10,6 @@
     <string name="title_activity_map_tracking">Maps</string>
     <string name="title_activity_competition">ChallengeAktivität</string>
     <string name="change_lang">Sprache verändern</string>
+    <string name="user_location_permission_explanation"> Die App braucht GPS Rechte um fortfahren zu können.</string>
+    <string name="user_location_permission_not_granted">Sie haben keine GPS Rechte gegeben.</string>
 </resources>

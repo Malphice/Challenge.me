@@ -40,6 +40,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:7.2.0'
+    implementation "android.arch.lifecycle:extensions:1.1.1"
     //implementation 'com.mapbox.mapboxsdk:mapbox-android-navigation-ui:0.34.0'
 
 }

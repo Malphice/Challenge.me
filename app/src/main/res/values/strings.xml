@@ -10,7 +10,6 @@
     <string name="title_activity_competition">CompetitionActivity</string>
     <string name="title_activity_countdown">CountdownActivity</string>
     <string name="change_lang">Change Language</string>
-    <string name="access_token" translatable="false">pk.eyJ1IjoiY2hhbGxlbmdlLW1lIiwiYSI6ImNqdHI5b242ODBkNDM0ZGw4eXhxcnB1NW4ifQ.Do_reE-mmPdRuCs1yAh-3w</string>
     <string name="user_location_permission_explanation">This app needs location permissions to show its functionality.</string>
     <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
 </resources>
