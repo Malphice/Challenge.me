@@ -53,6 +53,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -65,10 +67,13 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.style.layers.LineLayer;
+import com.mapbox.mapboxsdk.style.layers.Property;
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ListOnline extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
@@ -106,6 +111,8 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
     private PermissionsManager permissionsManager;
     private LocationComponent locationComponent;
 
+    private List<Point> routeCoordinates;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -113,7 +120,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
         setContentView(R.layout.activity_list_online);
         setTitle("Users Online");
 
-        Mapbox.getInstance(this, "pk.eyJ1IjoiY2hhbGxlbmdlLW1lIiwiYSI6ImNqdHI5bjF4MTBubTU0NHBhM3Qzam85MjcifQ.RbitFEoz8u1-ID8N-4ZSIw");
+        Mapbox.getInstance(this, "pk.eyJ1IjoiY2hhbGxlbmdlLW1lIiwiYSI6ImNqdTQzbmM1NzByY3E0ZHBwNzMxYXl5NDkifQ.-FFDNnN6j6yllW0wKgZ0ug");
 
         mapView = new MapView(this);
         mapView.onCreate(savedInstanceState);
@@ -559,8 +566,31 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
             @Override
             public void onStyleLoaded(@NonNull Style style) {
                 enableLocationComponent(style);
+
+                initRouteCoordinates();
+
+             style.addSource(new GeoJsonSource("line-source",
+                     FeatureCollection.fromFeatures(new Feature[] {Feature.fromGeometry(
+                                LineString.fromLngLats(routeCoordinates)
+                       )})));
+
+             style.addLayer(new LineLayer("lineLayer", "line-source").withProperties(
+                        PropertyFactory.lineDasharray(new Float[] {0.01f, 2f}),
+                        PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+                        PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+                        PropertyFactory.lineWidth(5f),
+                        PropertyFactory.lineColor(Color.parseColor("#e55e5e"))
+                ));
+
             }
         });
+    }
+
+    private void initRouteCoordinates() {
+// Create a list to store our line coordinates.
+        routeCoordinates = new ArrayList<>();
+        routeCoordinates.add(Point.fromLngLat(lon, lat));
+
     }
 
     @Override
@@ -579,6 +609,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
             locationComponent.setLocationComponentEnabled(true);
             // Set the component's camera mode
             //locationComponent.setCameraMode(CameraMode.TRACKING);
+
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
@@ -588,7 +619,7 @@ public class ListOnline extends AppCompatActivity implements GoogleApiClient.Con
 
     @Override
     public void onExplanationNeeded(List<String> permissionsToExplain) {
-        Toast.makeText(this, R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show();
+       Toast.makeText(this, R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show();
     }
 
     @Override
